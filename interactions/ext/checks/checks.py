@@ -1,12 +1,27 @@
 import functools
 from inspect import isawaitable, getfullargspec
-from typing import Union, Callable, Coroutine
+from typing import Union, Callable, Coroutine, Awaitable, TypeVar, Any, TYPE_CHECKING
 
 from . import errors
 
+if TYPE_CHECKING:
+    from interactions import CommandContext
 
-def check(predicate: Union[Callable, Coroutine]) -> Callable:
-    def decorator(coro: Callable[..., Coroutine]):
+    Check = Callable[[CommandContext], Union[bool, Awaitable[bool]]]
+    _T = TypeVar("_T")
+    Coro = Callable[..., Coroutine[Any]]
+
+
+def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
+    """
+    A decorator that only runs the wrapped function if the passed check returns True.
+
+    Checks should only take a single argument, an instance of :class:`interactions.CommandContext`
+    :param predicate: The check to run
+    :type predicate: Callable[[CommandContext], Union[bool, Awaitable[bool]]]
+    """
+
+    def decorator(coro: Callable[..., Coroutine[_T]]) -> Callable[..., Coroutine[_T]]:
 
         if getfullargspec(coro).args[0] == "self":  # To future proof classes
 
