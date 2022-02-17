@@ -1,7 +1,8 @@
 import functools
-from inspect import isawaitable, getfullargspec
-from typing import Union, Callable, Awaitable, TypeVar, Any, TYPE_CHECKING
-from pprint import pprint as print
+from inspect import getfullargspec, isawaitable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Union
+
+from interactions import Permissions
 
 from . import errors
 
@@ -103,16 +104,15 @@ def dm_only() -> Callable[["Coro"], "Coro"]:
     return check(predicate)
 
 
-# TODO Pending an actual permissions object
-# def has_permissions(**perms: dict[str, bool]) -> Callable[["Coro"], "Coro"]:
-#
-#     def predicate(ctx: "CommandContext") -> bool:
-#         print(ctx.author._json)
-#         for perm, value in perms:
-#             ...
-#         return True
-#
-#     return check(predicate)
+def has_permissions(**perms: bool) -> Callable[["Coro"], "Coro"]:
+    def predicate(ctx: "CommandContext") -> bool:
+        for perm, value in perms.items():
+            if (Permissions[perm.upper()] in ctx.author.permissions) is not value:
+                return False
+
+        raise errors.MissingPermissions  # todo add the missing perms in the raise
+
+    return check(predicate)
 
 
 def is_admin(guild_only: bool = True) -> Callable[["Coro"], "Coro"]:
