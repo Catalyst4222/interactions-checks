@@ -38,3 +38,9 @@ class MissingPermissions(CheckFailure):
 
 class NotAdmin(CheckFailure):
     """Raised by :func:`checks.has_permissions` when the user is not an administrator"""
+
+
+class CommandOnCooldown(CheckFailure):
+    """Raised by :func:`cooldown.cooldown` when the command isn't ready to be used"""
+
+    # todo remaining time
