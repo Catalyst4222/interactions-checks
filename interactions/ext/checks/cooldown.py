@@ -1,11 +1,9 @@
 import time
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, List
+from typing import Dict, List
 
 from . import errors
-
-if TYPE_CHECKING:
-    from interactions import CommandContext
+from interactions import Snowflake, CommandContext
 
 
 class Bucket:
@@ -40,7 +38,11 @@ class Bucket:
 
         key = getattr(ctx, self.attribute)
         if hasattr(key, "id"):
-            key = hash(key.id)
+            key = key.id
+        try:
+            key = int(key)  # Thank you James
+        except TypeError:
+            pass
 
         timers = self._timers.get(key, [])
 
@@ -49,6 +51,8 @@ class Bucket:
 
         timers.append(time.time())
         self._timers[key] = timers
+        print(self._timers)
+        print([int(snowflake) for snowflake in self._timers])
 
         return True
 
