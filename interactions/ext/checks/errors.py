@@ -44,3 +44,7 @@ class CommandOnCooldown(CheckFailure):
     """Raised by :func:`cooldown.cooldown` when the command isn't ready to be used"""
 
     # todo remaining time
+
+
+class MaxConcurrencyReached(CheckFailure):
+    """raised by :func:`concurrency.limit_concurrency` when too many instances of a command are being ran"""
