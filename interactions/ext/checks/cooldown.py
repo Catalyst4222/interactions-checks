@@ -2,8 +2,9 @@ import time
 from functools import wraps
 from typing import Dict, List
 
+from interactions import CommandContext
+
 from . import errors
-from interactions import Snowflake, CommandContext
 
 
 class Bucket:
@@ -24,7 +25,30 @@ class Bucket:
         self.cooldown: int = delay
         self.count: int = count
 
-        self._timers: Dict[..., List[float]] = {}
+        self._timers: Dict[..., List[float]] = {}  # todo test with defaultdict
+
+    def _clean_timers(self):
+        """Clean out any outdated times"""
+        for times in self._timers.values():
+            for timer in times:
+                if timer + self.cooldown < time.time():
+                    times.remove(timer)
+
+    def _get_times(self, ctx) -> list[float]:
+        """Get the"""
+        key = getattr(ctx, self.attribute)
+        if hasattr(key, "id"):
+            key = key.id
+        try:
+            key = int(key)
+        except TypeError:
+            pass
+
+        timers = self._timers.get(key)
+        if timers is None:
+            timers = []
+            self._timers[key] = timers
+        return timers
 
     def can_run(self, ctx: "CommandContext") -> bool:
         """
@@ -36,32 +60,24 @@ class Bucket:
         """
         self._clean_timers()
 
-        key = getattr(ctx, self.attribute)
-        if hasattr(key, "id"):
-            key = key.id
-        try:
-            key = int(key)  # Thank you James
-        except TypeError:
-            pass
-
-        timers = self._timers.get(key, [])
+        timers = self._get_times(ctx)
 
         if len(timers) >= self.count:
             return False
 
         timers.append(time.time())
-        self._timers[key] = timers
-        print(self._timers)
-        print([int(snowflake) for snowflake in self._timers])
 
         return True
 
-    def _clean_timers(self):
-        """Clean out any outdated times"""
-        for times in self._timers.values():
-            for timer in times:
-                if timer + self.cooldown < time.time():
-                    times.remove(timer)
+    def remaining_time(self, ctx: "CommandContext") -> float:
+        self._clean_timers()
+
+        times = self._get_times(ctx)
+
+        if len(times) < self.count:
+            return 0.0
+
+        return (min(times) + self.cooldown) - time.time()
 
 
 def cooldown(bucket: Bucket, error_on_fail: bool = False):
@@ -73,9 +89,11 @@ def cooldown(bucket: Bucket, error_on_fail: bool = False):
                 return await func(ctx, *args, **kwargs)
 
             if error_on_fail:
-                raise errors.CommandOnCooldown  # Todo add time left
+                raise errors.CommandOnCooldown(ctx, bucket)
 
-            await ctx.send("This command is currently on cooldown")
+            await ctx.send(
+                f"This command will get off cooldown in {bucket.remaining_time(ctx):2f} seconds"
+            )
 
         # Change over special data
         new_data = filter(lambda attr: attr not in dir(type(func)), dir(func))

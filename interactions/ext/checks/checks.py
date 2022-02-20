@@ -36,7 +36,7 @@ def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
                     res = await res
 
                 if not res:
-                    raise errors.CheckFailure
+                    raise errors.CheckFailure(ctx)
 
                 return await coro(self, ctx, *args, **kwargs)
 
@@ -49,7 +49,7 @@ def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
                     res = await res
 
                 if not res:
-                    raise errors.CheckFailure
+                    raise errors.CheckFailure(ctx)
 
                 return await coro(ctx, *args, **kwargs)
 
@@ -69,7 +69,7 @@ def is_owner() -> Callable[["Coro"], "Coro"]:
         info = await ctx.client.http.get_current_bot_information()
         if int(ctx.author.user.id) == int(info["owner"]["id"]):
             return True
-        raise errors.NotOwner
+        raise errors.NotOwner(ctx)
 
     return check(predicate)
 
@@ -83,7 +83,7 @@ def guild_only() -> Callable[["Coro"], "Coro"]:
 
     def predicate(ctx: "CommandContext"):
         if ctx.guild_id is None:
-            raise errors.NoDMs
+            raise errors.NoDMs(ctx)
         return True
 
     return check(predicate)
@@ -98,7 +98,7 @@ def dm_only() -> Callable[["Coro"], "Coro"]:
 
     def predicate(ctx: "CommandContext"):
         if ctx.guild_id is not None:
-            raise errors.DMsOnly
+            raise errors.DMsOnly(ctx)
         return True
 
     return check(predicate)
@@ -106,11 +106,16 @@ def dm_only() -> Callable[["Coro"], "Coro"]:
 
 def has_permissions(**perms: bool) -> Callable[["Coro"], "Coro"]:
     def predicate(ctx: "CommandContext") -> bool:
-        for perm, value in perms.items():
-            if (Permissions[perm.upper()] in ctx.author.permissions) is not value:
-                return False
+        if missing_perms := [
+            *filter(
+                lambda perm: (Permissions[perm.upper()] in ctx.author.permissions)
+                is not perms[perm],
+                perms,
+            )
+        ]:
+            raise errors.MissingPermissions(ctx, missing_perms)
 
-        raise errors.MissingPermissions  # todo add the missing perms in the raise
+        return True
 
     return check(predicate)
 
@@ -127,11 +132,11 @@ def is_admin(guild_only: bool = True) -> Callable[["Coro"], "Coro"]:
     def predicate(ctx: "CommandContext"):
         if ctx.guild_id is None:
             if guild_only:
-                raise errors.NoDMs
+                raise errors.NoDMs(ctx)
             return True
 
         if int(ctx.author.permissions) & 8:  # 8 is the administrator permission
             return True
-        raise errors.NotAdmin
+        raise errors.NotAdmin(ctx)
 
     return check(predicate)
