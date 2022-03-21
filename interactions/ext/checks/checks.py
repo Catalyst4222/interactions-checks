@@ -66,8 +66,7 @@ def is_owner() -> Callable[["Coro"], "Coro"]:
     """
 
     async def predicate(ctx):
-        info = await ctx.client.http.get_current_bot_information()
-        if int(ctx.author.user.id) == int(info["owner"]["id"]):
+        if int(ctx.author.user.id) == int(ctx.client.me.id):
             return True
         raise errors.NotOwner(ctx)
 
