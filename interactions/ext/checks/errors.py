@@ -73,6 +73,8 @@ class CommandOnCooldown(CheckFailure):
     def __init__(self, ctx: Context, bucket: "Bucket", *args):
         message = f"This command will get off cooldown in {bucket.remaining_time(ctx)} seconds"
         super().__init__(ctx, message, *args)
+        self.bucket = bucket
+        self.remaining_time = bucket.remaining_time()
 
 
 class MaxConcurrencyReached(CheckFailure):
