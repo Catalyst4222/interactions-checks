@@ -1,7 +1,7 @@
 from asyncio import Semaphore
 from typing import TYPE_CHECKING, List
 
-from interactions import _Context
+from interactions.context import _Context
 
 if TYPE_CHECKING:
     from . import Bucket
