@@ -1,7 +1,7 @@
 from asyncio import Semaphore
 from typing import TYPE_CHECKING, List
 
-from interactions import Context
+from interactions.context import _Context
 
 if TYPE_CHECKING:
     from . import Bucket
@@ -12,7 +12,7 @@ class CheckFailure(Exception):
 
     msg = "A generic check failed"
 
-    def __init__(self, ctx: Context, message: str = None, *args):
+    def __init__(self, ctx: _Context, message: str = None, *args):
         super().__init__(message or self.msg.format(ctx), *args)
         self.ctx = ctx
 
@@ -40,7 +40,7 @@ class MissingPermissions(CheckFailure):
 
     msg = "You do not have the proper permissions"
 
-    def __init__(self, ctx: Context, missing_permissions: list[str], *args) -> None:
+    def __init__(self, ctx: _Context, missing_permissions: list[str], *args) -> None:
         self.missing_permissions: List[str] = missing_permissions
 
         missing = [
@@ -70,7 +70,7 @@ class CommandOnCooldown(CheckFailure):
 
     msg = "This command is on cooldown"
 
-    def __init__(self, ctx: Context, bucket: "Bucket", *args):
+    def __init__(self, ctx: _Context, bucket: "Bucket", *args):
         message = f"This command will get off cooldown in {bucket.remaining_time(ctx)} seconds"
         super().__init__(ctx, message, *args)
         self.bucket = bucket
@@ -82,6 +82,6 @@ class MaxConcurrencyReached(CheckFailure):
 
     msg = "This command has too many instances running"
 
-    def __init__(self, ctx: Context, sem: Semaphore, *args):
+    def __init__(self, ctx: _Context, sem: Semaphore, *args):
         message = f"This command already has {sem._value} instances running"
         super().__init__(ctx, message, *args)
