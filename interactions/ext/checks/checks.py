@@ -65,8 +65,9 @@ def is_owner() -> Callable[["Coro"], "Coro"]:
     :raise errors.NotOwner: The command user is not the bot owner
     """
 
-    async def predicate(ctx):
-        if int(ctx.author.user.id) == int(ctx.client.me.id):
+    async def predicate(ctx: "CommandContext"):
+        info = await ctx.client.get_current_bot_information()
+        if int(ctx.author.user.id) == int(info["owner"]["id"]):
             return True
         raise errors.NotOwner(ctx)
 
