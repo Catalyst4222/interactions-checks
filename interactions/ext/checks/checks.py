@@ -2,13 +2,11 @@ import functools
 from inspect import getfullargspec, isawaitable
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Union
 
-from interactions import Permissions
+from interactions import Permissions, Role, CommandContext, Snowflake
 
 from . import errors
 
 if TYPE_CHECKING:
-    from interactions import CommandContext
-
     Check = Callable[[CommandContext], Union[bool, Awaitable[bool]]]
     _T = TypeVar("_T")
     Coro = Callable[..., Awaitable[Any]]
@@ -138,5 +136,38 @@ def is_admin(guild_only: bool = True) -> Callable[["Coro"], "Coro"]:
         if int(ctx.author.permissions) & 8:  # 8 is the administrator permission
             return True
         raise errors.NotAdmin(ctx)
+
+    return check(predicate)
+
+
+def has_role(
+    *roles: Union[str, int, Snowflake],
+    require_all: bool = False,
+    guild_only: bool = True,
+) -> Callable[["Coro"], "Coro"]:
+    """
+    A check that makes sure the author has the right role names/ids
+
+    :param Union[str, int] roles: The role names or ids
+    :param bool require_all: If the user needs every role or just one, defaults to just one
+    :param bool guild_only: If the command should fail if in a dm
+    :raise errors.NoDMs: The command was ran in a DM
+    :raise errors.MissingRole: The author does not have the needed roles
+    """
+
+    def _has_role(author_role: Union["Role", int]) -> bool:
+        if isinstance(author_role, Role):
+            return author_role.name in roles or author_role.id in roles
+        return author_role in roles
+
+    def predicate(ctx: "CommandContext"):
+        if ctx.guild_id is None:
+            if guild_only:
+                raise errors.NoDMs(ctx)
+            return True
+
+        if require_all:
+            return all(_has_role(role) for role in ctx.author.roles)
+        return any(_has_role(role) for role in ctx.author.roles)
 
     return check(predicate)
