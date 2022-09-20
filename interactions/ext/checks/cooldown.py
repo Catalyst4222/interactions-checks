@@ -34,7 +34,7 @@ class Bucket:
                 if timer + self.cooldown < time.time():
                     times.remove(timer)
 
-    def _get_times(self, ctx) -> list[float]:
+    def _get_times(self, ctx) -> List[float]:
         """Get the"""
         key = getattr(ctx, self.attribute)
         if hasattr(key, "id"):
