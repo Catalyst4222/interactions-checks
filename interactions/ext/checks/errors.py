@@ -40,7 +40,7 @@ class MissingPermissions(CheckFailure):
 
     msg = "You do not have the proper permissions"
 
-    def __init__(self, ctx: CommandContext, missing_permissions: list[str], *args) -> None:
+    def __init__(self, ctx: CommandContext, missing_permissions: List[str], *args) -> None:
         self.missing_permissions: List[str] = missing_permissions
 
         missing = [
