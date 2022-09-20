@@ -40,7 +40,9 @@ class MissingPermissions(CheckFailure):
 
     msg = "You do not have the proper permissions"
 
-    def __init__(self, ctx: CommandContext, missing_permissions: List[str], *args) -> None:
+    def __init__(
+        self, ctx: CommandContext, missing_permissions: List[str], *args
+    ) -> None:
         self.missing_permissions: List[str] = missing_permissions
 
         missing = [
@@ -63,6 +65,28 @@ class NotAdmin(CheckFailure):
     """Raised by :func:`checks.has_permissions` when the user is not an administrator"""
 
     msg = "You are not an administrator"
+
+
+class MissingRole(CheckFailure):
+    """Raised by :func:`checks.has_role` when the user doesn't have the right role id/name"""
+
+    msg = "You do not have the correct roles"
+
+    def __init__(self, ctx: CommandContext, missing_roles: List[str], *args) -> None:
+        self.missing_roles: List[str] = missing_roles
+
+        if len(missing_roles) > 2:
+            fmt = "{}, and {}".format(", ".join(missing_roles[:-1]), missing_roles[-1])
+        elif len(missing_roles) == 2:
+            fmt = "{} and {}".join(missing_roles)
+        else:
+            fmt = missing_roles[0]
+
+        message = f"You are missing the {fmt} role(s) needed to run this command."
+
+        super().__init__(ctx, message, *args)
+
+        self.msg = message
 
 
 class CommandOnCooldown(CheckFailure):
