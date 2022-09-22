@@ -13,6 +13,17 @@ if TYPE_CHECKING:
     Coro = Callable[..., Awaitable[Any]]
     CoroOrCommand = TypeVar("CoroOrCommand", Coro, Command)
 
+__all__ = (
+    "check",
+    "old_style_check",
+    "is_owner",
+    "guild_only",
+    "dm_only",
+    "has_permissions",
+    "is_admin",
+    "has_role",
+)
+
 
 def check(predicate: "Check") -> Callable[["_T"], "_T"]:
     """

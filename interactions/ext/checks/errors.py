@@ -6,6 +6,18 @@ from interactions import CommandContext
 if TYPE_CHECKING:
     from . import Bucket
 
+__all__ = (
+    "CheckFailure",
+    "NotOwner",
+    "NoDMs",
+    "DMsOnly",
+    "MissingPermissions",
+    "NotAdmin",
+    "MissingRole",
+    "CommandOnCooldown",
+    "MaxConcurrencyReached",
+)
+
 
 class CheckFailure(Exception):
     """Generic error to be raised when a check failed"""
@@ -74,7 +86,7 @@ class MissingRole(CheckFailure):
         self.missing_roles: List[str] = missing_roles
 
         if len(missing_roles) > 2:
-            fmt = "{}, and {}".format(", ".join(missing_roles[:-1]), missing_roles[-1])
+            fmt = f'{", ".join(missing_roles[:-1])}, and {missing_roles[-1]}'
         elif len(missing_roles) == 2:
             fmt = "{} and {}".join(missing_roles)
         else:
@@ -96,7 +108,7 @@ class CommandOnCooldown(CheckFailure):
         message = f"This command will get off cooldown in {bucket.remaining_time(ctx)} seconds"
         super().__init__(ctx, message, *args)
         self.bucket = bucket
-        self.remaining_time = bucket.remaining_time()
+        self.remaining_time = bucket.remaining_time(ctx)
 
 
 class MaxConcurrencyReached(CheckFailure):

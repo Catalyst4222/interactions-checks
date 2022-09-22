@@ -1,3 +1,4 @@
+import contextlib
 import time
 from functools import wraps
 from typing import Dict, List
@@ -5,6 +6,8 @@ from typing import Dict, List
 from interactions import CommandContext
 
 from . import errors
+
+__all__ = ("Bucket", "cooldown")
 
 
 class Bucket:
@@ -39,11 +42,8 @@ class Bucket:
         key = getattr(ctx, self.attribute)
         if hasattr(key, "id"):
             key = key.id
-        try:
+        with contextlib.suppress(TypeError):
             key = int(key)
-        except TypeError:
-            pass
-
         timers = self._timers.get(key)
         if timers is None:
             timers = []

@@ -6,6 +6,8 @@ from interactions import CommandContext
 from .attribute import Attribute
 from .errors import CheckFailure
 
+__all__ = ("setup",)
+
 
 def _command_patch(Command: Type[interactions.Command]):
     old_init = Command.__init__

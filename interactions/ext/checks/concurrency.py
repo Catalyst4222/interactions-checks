@@ -4,6 +4,8 @@ from typing import Literal
 
 from . import errors
 
+__all__ = ("limit_concurrency",)
+
 
 def limit_concurrency(
     amount: int,
