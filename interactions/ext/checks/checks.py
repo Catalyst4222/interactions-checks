@@ -1,11 +1,9 @@
 import asyncio
-import functools
-from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Union
 
 from interactions import Command, CommandContext, Permissions, Role, Snowflake
 
-from . import errors
+from . import CheckFailure, errors
 
 if TYPE_CHECKING:
     Check = Callable[[CommandContext], Union[bool, Awaitable[bool]]]
@@ -15,7 +13,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     "check",
-    "old_style_check",
+    "flatten_checks",
     "is_owner",
     "guild_only",
     "dm_only",
@@ -52,38 +50,38 @@ def check(predicate: "Check") -> Callable[["_T"], "_T"]:
     return decorator
 
 
-def old_style_check(predicate: "Check") -> Callable[["_T"], "_T"]:
-    def decorator_(coro: Callable[..., Awaitable["_T"]]) -> Callable[..., Awaitable["_T"]]:
+def flatten_checks() -> Callable[["_T"], "_T"]:
+    """
+    Collapse any checks onto the function. When the function is ran, all the checks will be ran as well.
 
-        if "." in coro.__qualname__:  # To future proof classes
+    This allows you to add checks onto functions that aren't a part of a command, but it has to be above all the check decorators
+    """
 
-            @functools.wraps(coro)
+    def decorator(coro: Callable[..., Awaitable["_T"]]) -> Callable[..., Awaitable["_T"]]:
+        if not hasattr(coro, "__command_checks__"):
+            coro.__command_checks__ = []
+
+        if "." in coro.__qualname__:
+
             async def inner(self, ctx, *args, **kwargs):
-                res = predicate(ctx)
-                if isawaitable(res):
-                    res = await res
-
-                if not res:
-                    raise errors.CheckFailure(ctx)
-
+                # noinspection PyUnresolvedReferences
+                for check in coro.__command_checks__:
+                    if not await check(ctx):
+                        raise CheckFailure(ctx)
                 return await coro(self, ctx, *args, **kwargs)
 
         else:
 
-            @functools.wraps(coro)
             async def inner(ctx, *args, **kwargs):
-                res = predicate(ctx)
-                if isawaitable(res):
-                    res = await res
-
-                if not res:
-                    raise errors.CheckFailure(ctx)
-
+                # noinspection PyUnresolvedReferences
+                for check in coro.__command_checks__:
+                    if not await check(ctx):
+                        raise CheckFailure(ctx)
                 return await coro(ctx, *args, **kwargs)
 
         return inner
 
-    return decorator_
+    return decorator
 
 
 def is_owner() -> Callable[["Coro"], "Coro"]:
