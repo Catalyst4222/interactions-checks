@@ -6,6 +6,7 @@ from interactions import Client
 from interactions.ext.checks import check
 
 bot = Client(token="token")
+bot.load("interactions.ext.checks")  # Needed!
 
 def my_check(ctx):
     if ctx.author.id == bot.me.id:
@@ -22,9 +23,10 @@ bot.start()
 
 ```python
 from interactions import Client
-from interactions.ext.checks import check
+from interactions.ext.checks import check, setup
 
 bot = Client(token="token")
+setup(bot)  # The alternative to `bot.load`
 
 def my_check():
     def predicate(ctx):
@@ -48,6 +50,7 @@ from interactions import Client
 from interactions.ext.checks import is_owner
 
 bot = Client(token="token")
+bot.load("interactions.ext.checks")
 
 @bot.command(name="secrets", description="An owner only command")
 @is_owner()
@@ -63,6 +66,7 @@ from interactions import Client
 from interactions.ext.checks import is_owner, dm_only
 
 bot = Client(token="token")
+bot.load("interactions.ext.checks")
 
 # Must pass both checks to succeed
 @bot.command(name="secrets", description="An owner only command")

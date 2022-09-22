@@ -1,8 +1,9 @@
+import asyncio
 import functools
-from inspect import getfullargspec, isawaitable
+from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Union
 
-from interactions import Permissions, Role, CommandContext, Snowflake
+from interactions import Command, CommandContext, Permissions, Role, Snowflake
 
 from . import errors
 
@@ -10,9 +11,10 @@ if TYPE_CHECKING:
     Check = Callable[[CommandContext], Union[bool, Awaitable[bool]]]
     _T = TypeVar("_T")
     Coro = Callable[..., Awaitable[Any]]
+    CoroOrCommand = TypeVar("CoroOrCommand", Coro, Command)
 
 
-def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
+def check(predicate: "Check") -> Callable[["_T"], "_T"]:
     """
     A decorator that only runs the wrapped function if the passed check returns True.
 
@@ -21,11 +23,28 @@ def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
     :type predicate: Callable[[CommandContext], Union[bool, Awaitable[bool]]]
     """
 
-    def decorator(
-        coro: Callable[..., Awaitable["_T"]]
-    ) -> Callable[..., Awaitable["_T"]]:
+    if not asyncio.iscoroutinefunction(predicate):
+        # Wrap in a coroutine
+        async def _predicate(*args, **kwargs):
+            return predicate(*args, **kwargs)
 
-        if getfullargspec(coro).args[0] == "self":  # To future proof classes
+    else:
+        _predicate = predicate
+
+    def decorator(coro_or_command: "CoroOrCommand") -> "CoroOrCommand":
+        if getattr(coro_or_command, "__command_checks__", None) is None:
+            coro_or_command.__command_checks__ = []
+        checks = coro_or_command.__command_checks__
+        checks.append(_predicate)
+        return coro_or_command
+
+    return decorator
+
+
+def old_style_check(predicate: "Check") -> Callable[["_T"], "_T"]:
+    def decorator_(coro: Callable[..., Awaitable["_T"]]) -> Callable[..., Awaitable["_T"]]:
+
+        if "." in coro.__qualname__:  # To future proof classes
 
             @functools.wraps(coro)
             async def inner(self, ctx, *args, **kwargs):
@@ -53,7 +72,7 @@ def check(predicate: "Check") -> Callable[["Coro"], "Coro"]:
 
         return inner
 
-    return decorator
+    return decorator_
 
 
 def is_owner() -> Callable[["Coro"], "Coro"]:
@@ -103,7 +122,7 @@ def dm_only() -> Callable[["Coro"], "Coro"]:
 
 
 def has_permissions(**perms: bool) -> Callable[["Coro"], "Coro"]:
-    def predicate(ctx: "CommandContext") -> bool:
+    def predicate(ctx: "CommandContext") -> bool:  # todo add overrides
         if missing_perms := [
             *filter(
                 lambda perm: (Permissions[perm.upper()] in ctx.author.permissions)

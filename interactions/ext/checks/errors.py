@@ -40,9 +40,7 @@ class MissingPermissions(CheckFailure):
 
     msg = "You do not have the proper permissions"
 
-    def __init__(
-        self, ctx: CommandContext, missing_permissions: List[str], *args
-    ) -> None:
+    def __init__(self, ctx: CommandContext, missing_permissions: List[str], *args) -> None:
         self.missing_permissions: List[str] = missing_permissions
 
         missing = [
@@ -51,7 +49,7 @@ class MissingPermissions(CheckFailure):
         ]
 
         if len(missing) > 2:
-            fmt = "{}, and {}".format(", ".join(missing[:-1]), missing[-1])
+            fmt = f'{", ".join(missing[:-1])}, and {missing[-1]}'
         else:
             fmt = " and ".join(missing)
         message = f"You are missing {fmt} permission(s) to run this command."

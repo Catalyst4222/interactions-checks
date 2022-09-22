@@ -15,7 +15,7 @@ async def bucket_example(ctx):
 bot.start()
 ```
 
-## Raise an error 
+## Raise an error
 ```python
 from interactions import Client
 from interactions.ext.checks import cooldown, Bucket, CommandOnCooldown
