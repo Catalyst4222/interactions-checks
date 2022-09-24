@@ -25,5 +25,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["discord-py-interactions>=4.0.0"],
+    install_requires=["discord-py-interactions>=4.3.2rc1"],
 )
