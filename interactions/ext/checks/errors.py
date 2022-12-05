@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List
 from interactions import CommandContext
 
 if TYPE_CHECKING:
-    from . import Bucket
+    from .cooldown import Bucket
 
 __all__ = (
     "CheckFailure",
